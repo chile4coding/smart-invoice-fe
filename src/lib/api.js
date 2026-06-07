@@ -1,5 +1,5 @@
 // const API_BASE_URL = "http://185.200.244.215:4445/api";
-const API_BASE_URL = `/api`
+const API_BASE_URL = `https://smart-invoice-be.onrender.com/api`
 
 const getAccessToken = () => localStorage.getItem("accessToken");
 
