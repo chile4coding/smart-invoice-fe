@@ -65,7 +65,7 @@ jobs:
             if pm2 describe ${{ env.APP_NAME }} > /dev/null 2>&1; then
               pm2 restart ${{ env.APP_NAME }} --update-env
             else
-              pm2 serve dist 3134 --name "${{ env.APP_NAME }}" --spa
+              pm2 serve ${{ secrets.SERVER_PATH }}/dist 5174 --name "${{ env.APP_NAME }}" --spa
             fi
 
             pm2 save
