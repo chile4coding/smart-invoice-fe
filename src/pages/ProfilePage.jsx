@@ -121,7 +121,7 @@ export default function ProfilePage() {
   };
 
   return (
-    <div style={{ padding: 24, maxWidth: 600 }}>
+    <div style={{  maxWidth: 600 }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
         <h1 style={{ fontSize: 22, fontWeight: 800, color: C.text }}>Profile</h1>
        <div style={{

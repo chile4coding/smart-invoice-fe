@@ -207,7 +207,7 @@ useEffect(() => {
             const msg =
               result.data?.error?.details?.[0]?.message ||
               result.data?.error?.message ||
-              "Failed to create invoice.";
+              "Failed to create receipt.";
             setError(msg);
           }
         },
@@ -263,10 +263,13 @@ useEffect(() => {
         >
           <div>
             <div style={{ fontSize: 16, fontWeight: 800, color: C.text }}>
-              Create Invoice
+              
+            {
+             receipt  &&  receipt?.id ? "Update Receipt":"Create Receipt"
+            }
             </div>
             <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>
-              Fill in the details below to generate a new invoice
+              Fill in the details below to { receipt  &&  receipt?.id ?"update receipt":"generate a new receipt"} 
             </div>
           </div>
           <button
@@ -304,7 +307,7 @@ useEffect(() => {
                 gap: 14,
               }}
             >
-              <Field label="Client Name" required>
+              <Field label="Patient Name" required>
                 <TextInput
                   value={clientName}
                   onChange={(e) => setClientName(e.target.value)}
@@ -605,7 +608,7 @@ useEffect(() => {
               gap: 8,
             }}
           >
-            {loading ? "Creating..." : "Create Invoice"}
+            {loading ? "Creating..." : "Create receipt"}
           </button>
         </div>
       </div>

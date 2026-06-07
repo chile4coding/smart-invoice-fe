@@ -22,7 +22,7 @@ export default function Layout() {
       <div style={{ flex: 1, marginLeft: 220, display: "flex", flexDirection: "column", minHeight: "100vh" }} className="main-content">
        
         <Topbar title={title} onMenu={() => setMobileOpen(true)} />
-        <div style={{ flex: 1, overflowY: "auto" , padding: "10px 24px"}}>
+        <div style={{ flex: 1, overflowY: "auto" , padding: "10px"}}>
           <Outlet />
         </div>
       </div>

@@ -42,7 +42,7 @@ export default function LoginPage() {
 
   return (
 
-    <div style={{display:"flex", minHeight:"100vh",   background: "#F8F9F4 ", flexDirection:"column", padding: 40,  }}>
+    <div style={{display:"flex", minHeight:"100vh",   background: "#F8F9F4 ", flexDirection:"column", padding: "40px 10px",  }}>
       <div style={{ maxWidth:"1600px", width:"100%",  margin:"0 auto"}}>
  <div style={{  marginBottom:"50px"   }}>
                           <img src="/medixlogo_black.png" width={200}/>

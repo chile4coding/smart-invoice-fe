@@ -515,7 +515,7 @@ export default function UsersPage() {
       {passwordModal && <ChangePasswordModal user={passwordModal} onClose={() => setPasswordModal(null)} />}
       {editProfileModal && <EditProfileModal user={editProfileModal} onClose={() => setEditProfileModal(null)} />}
 
-      <div style={{ padding: 24 }}>
+      <div >
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 12, marginBottom: 24 }}>
           <div>
             <h1 style={{ fontSize: 22, fontWeight: 800, color: C.text }}>Users</h1>
