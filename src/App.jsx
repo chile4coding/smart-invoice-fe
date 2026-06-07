@@ -10,6 +10,7 @@ import ReceiptHistoryPage from "./pages/ReceiptHistoryPage";
 import UsersPage from "./pages/Users";
 import { useAuth } from "./hooks/useAuth";
 
+
 function ProtectedLayout() {
   const { isAuthenticated, isLoading } = useAuth();
 
@@ -29,10 +30,14 @@ function ProtectedLayout() {
 }
 
 export default function App() {
+
+
   return (
     <>
       <BrowserRouter>
+    
         <Routes>
+
           <Route path="/login" element={<LoginPage />} />
           <Route element={<ProtectedLayout />}>
             <Route path="/dashboard" element={<DashboardPage />} />
