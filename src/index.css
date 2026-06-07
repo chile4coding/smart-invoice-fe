@@ -84,3 +84,26 @@ input {
     display: none !important;
   }
 }
+
+
+.line-item-row {
+  display: grid;
+  grid-template-columns: 1fr 80px 120px 100px 36px;
+  gap: 8px;
+  align-items: center;
+}
+
+@media (max-width: 600px) {
+  .line-item-row {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto auto;
+  }
+
+  .line-item-row > *:first-child {
+    grid-column: 1 / -1; /* description spans full width */
+  }
+
+  .line-item-row > *:last-child {
+    grid-column: 2 / 3; /* delete button on right */
+  }
+}
