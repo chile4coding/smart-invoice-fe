@@ -158,13 +158,13 @@ const handlePrint = () => {
       <tbody>
         ${receipt.lineItems.map((item) => `
           <tr>
-            <td style="padding: 3px 6px; color: ${C.text}; line-height: 1.4; word-break: break-word; text-transform: uppercase; font-weight: 500;">
+            <td style="padding: 3px 6px; font-size:10px; color: ${C.text}; line-height: 1.4; word-break: break-word; text-transform: uppercase; font-weight: 500;">
               ${item?.description}
             </td>
-            <td style="padding: 3px 6px; text-align: center; color: ${C.text}; white-space: nowrap; font-weight: 500;">
+            <td style="padding: 3px 6px; font-size:10px; text-align: center; color: ${C.text}; white-space: nowrap; font-weight: 500;">
               ${item?.quantity}
             </td>
-            <td style="padding: 3px 6px; text-align: right; font-weight: 500; color: ${C.text}; white-space: nowrap;">
+            <td style="padding: 3px 6px; font-size:10px; text-align: right; font-weight: 500; color: ${C.text}; white-space: nowrap;">
               ${fmtAmount(item?.total, receipt.currency)}
             </td>
           </tr>
