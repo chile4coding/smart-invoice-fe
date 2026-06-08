@@ -1,7 +1,7 @@
 import { format } from "date-fns";
 import { C } from "../constants/colors";
 import { Icon, Icons } from "../constants/icons";
-import { fmtAmount, getFullName } from "../lib/utils";
+import {  fmtAmount, getFullName } from "../lib/utils";
 import printJS from "print-js";
 
 const items = [
@@ -146,8 +146,8 @@ const handlePrint = () => {
   </div>
 
   <!-- Items table -->
-  <div style="overflow-x: auto; margin-bottom: 6px;">
-    <table style="width: 100%; border-collapse: collapse; font-size: 12px; min-width: 260px; table-layout: fixed;">
+  <div style="margin-bottom: 6px;">
+    <table style="width: 100%; border-collapse: collapse; font-size: 12px;  table-layout: fixed;">
       <thead>
         <tr style="border-top: 1px solid ${C.border}; border-bottom: 1px solid ${C.border};">
           <th style="padding:3px 6px; text-align: left; font-weight: 700; color: ${C.text};">Description</th>
@@ -178,7 +178,7 @@ const handlePrint = () => {
         <tr>
           <td style="padding: 7px 6px; font-weight: 700; font-size: 14px; color: ${C.text};">Total</td>
           <td></td>
-          <td style="padding: 7px 6px; font-weight: 700; font-size: 14px; color: ${C.text}; text-align: right; white-space: nowrap;">
+          <td style="padding: 7px 6px; margin-right:"4px"; font-weight: 700; font-size: 14px; color: ${C.text}; text-align: right; white-space: nowrap;">
             ${fmtAmount(receipt.grandTotal, receipt.currency)}
           </td>
         </tr>
