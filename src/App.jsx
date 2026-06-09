@@ -9,8 +9,6 @@ import ProfilePage from "./pages/ProfilePage";
 import ReceiptHistoryPage from "./pages/ReceiptHistoryPage";
 import UsersPage from "./pages/Users";
 import { useAuth } from "./hooks/useAuth";
-
-
 function ProtectedLayout() {
   const { isAuthenticated, isLoading } = useAuth();
 

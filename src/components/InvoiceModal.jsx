@@ -4,6 +4,7 @@ import { Icon, Icons } from "../constants/icons";
 import { useCreateInvoice, useUpdateInvoice } from "../lib/apiHooks";
 import { format } from "date-fns";
 
+
 const CURRENCIES = ["NGN", "USD", "GBP", "EUR"];
 
 const defaultLineItem = () => ({ description: "", quantity: 1, unitPrice: "" });
@@ -138,7 +139,7 @@ useEffect(() => {
   setClientGender(receipt.clientGender ?? "m");
   setReceiptID(receipt?.invoiceNumber ?? "");
 
-  setIssueDate(receipt.issueDate ? format(new Date(receipt.issueDate), "yyyy-MM-dd'T'HH:mm") : "");
+  setIssueDate(receipt.issueDate ? format(new Date(receipt.issueDate), "yyyy-MM-dd'T'HH:mm:ss") : "");
   setCurrency(receipt.currency ?? "NGN");
 
 
