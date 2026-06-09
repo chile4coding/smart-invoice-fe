@@ -20,7 +20,7 @@ export const formatRelativeDate = (dateInput) => {
     return result.charAt(0).toUpperCase() + result.slice(1);
   }
 
-  return format(date, "dd-MM-yyyy HH:mm:ss");
+  return format(date, "dd-MM-yyyy hh:mm:ss a");
 };
 export const getCurrencySymbol = (currency = "NGN") => {
   return new Intl.NumberFormat("en", {

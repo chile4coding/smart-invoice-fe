@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { C } from "../constants/colors";
 import { Icon, Icons } from "../constants/icons";
 import { useCreateInvoice, useUpdateInvoice } from "../lib/apiHooks";
@@ -48,12 +48,14 @@ function Field({ label, required, children }) {
   );
 }
 
-function TextInput({ value, onChange, placeholder, type = "text", step = "" }) {
+function TextInput({ value, onChange, placeholder, type = "text", step = "" , lang="", min="", max=""}) {
   const [focused, setFocused] = useState(false);
   return (
     <input
       type={type}
       value={value}
+      min={min}
+      max={max}
       onChange={onChange}
       step={step}
       placeholder={placeholder}
@@ -87,6 +89,60 @@ function SelectInput({ value, onChange, options }) {
 const toMinorUnits = (val) => Math.round(parseFloat(val || 0) * 100);
 // Convert kobo → naira display
 const fromMinorUnits = (val) => (val / 100).toFixed(2);
+
+
+const TimeInput24h = ({ value, onChange }) => {
+  const parts = (value || "00:00:00").split(":");
+
+  const update = (index, raw) => {
+    const max = [23, 59, 59][index];
+    const clamped = String(Math.min(max, Math.max(0, Number(raw)))).padStart(2, "0");
+    const newParts = [...parts];
+    newParts[index] = clamped;
+    onChange(newParts.join(":"));
+  };
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: "2px",
+        border: "1px solid #ccc",
+        borderRadius: "6px",
+        padding: "6px 10px",
+        width: "fit-content",
+        background: "#fff",
+      }}
+    >
+      {["HH", "MM", "SS"].map((placeholder, i) => (
+        <React.Fragment key={placeholder}>
+          <input
+            type="number"
+            min={0}
+            max={[23, 59, 59][i]}
+            placeholder={placeholder}
+            value={parts[i] || "00"}
+            onChange={(e) => update(i, e.target.value)}
+            onBlur={(e) => update(i, e.target.value)}
+            style={{
+              width: "36px",
+              border: "none",
+              outline: "none",
+              textAlign: "center",
+              fontSize: "14px",
+              fontFamily: "inherit",
+              MozAppearance: "textfield",
+            }}
+          />
+          {i < 2 && (
+            <span style={{ color: "#555", userSelect: "none" }}>:</span>
+          )}
+        </React.Fragment>
+      ))}
+    </div>
+  );
+};
 
 export default function InvoiceModal({ onClose, onSuccess, receipt }) {
   const createInvoice = useCreateInvoice();
@@ -389,10 +445,11 @@ export default function InvoiceModal({ onClose, onSuccess, receipt }) {
                   }
                 />
               </Field>
-              <Field label="Issue Time" required>
+              {/* <Field label="Issue Time" required>
                 <TextInput
                   type="time"
-                  step="1"
+                 step="1"
+
                   style={{ flex: 1, minWidth: "120px" }}
                   value={issueDate.split("T")[1] || ""}
                   onChange={(e) =>
@@ -401,7 +458,16 @@ export default function InvoiceModal({ onClose, onSuccess, receipt }) {
                     )
                   }
                 />
-              </Field>
+              </Field> */}
+
+              <Field label="Issue Time" required>
+  <TimeInput24h
+    value={issueDate.split("T")[1] || "00:00:00"}
+    onChange={(time) =>
+      setIssueDate(`${issueDate.split("T")[0] || ""}T${time}`)
+    }
+  />
+</Field>
               {/* </div> */}
 
               <Field label="Currency">

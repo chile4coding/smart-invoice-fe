@@ -107,3 +107,9 @@ input {
     grid-column: 2 / 3; /* delete button on right */
   }
 }
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
