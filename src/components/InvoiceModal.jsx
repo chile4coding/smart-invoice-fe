@@ -4,7 +4,6 @@ import { Icon, Icons } from "../constants/icons";
 import { useCreateInvoice, useUpdateInvoice } from "../lib/apiHooks";
 import { format } from "date-fns";
 
-
 const CURRENCIES = ["NGN", "USD", "GBP", "EUR"];
 
 const defaultLineItem = () => ({ description: "", quantity: 1, unitPrice: "" });
@@ -49,7 +48,7 @@ function Field({ label, required, children }) {
   );
 }
 
-function TextInput({ value, onChange, placeholder, type = "text" , step=""}) {
+function TextInput({ value, onChange, placeholder, type = "text", step = "" }) {
   const [focused, setFocused] = useState(false);
   return (
     <input
@@ -89,22 +88,22 @@ const toMinorUnits = (val) => Math.round(parseFloat(val || 0) * 100);
 // Convert kobo → naira display
 const fromMinorUnits = (val) => (val / 100).toFixed(2);
 
-export default function InvoiceModal({ onClose, onSuccess,  receipt }) {
+export default function InvoiceModal({ onClose, onSuccess, receipt }) {
   const createInvoice = useCreateInvoice();
   const loading = createInvoice.isPending;
   const [error, setError] = useState("");
-  const updateInvoice = useUpdateInvoice()
+  const updateInvoice = useUpdateInvoice();
 
   // Client Info
   const [clientName, setClientName] = useState("");
- 
+
   const [clientId, setClientId] = useState("");
   const [clientGender, setClientGender] = useState("m");
 
   // Invoice Details
   const [issueDate, setIssueDate] = useState("");
   const [currency, setCurrency] = useState("NGN");
-  const [receiptID,  setReceiptID] =  useState("")
+  const [receiptID, setReceiptID] = useState("");
 
   // Line Items
   const [lineItems, setLineItems] = useState([defaultLineItem()]);
@@ -112,44 +111,55 @@ export default function InvoiceModal({ onClose, onSuccess,  receipt }) {
   // ── Calculations ──────────────────────────────────────────────────────────
   const subtotal = lineItems.reduce(
     (sum, item) =>
-      sum + (parseFloat(item.quantity) || 0) * (parseFloat(item.unitPrice) || 0),
-    0
+      sum +
+      (parseFloat(item.quantity) || 0) * (parseFloat(item.unitPrice) || 0),
+    0,
   );
-  const taxAmount = subtotal 
-  
-  const grandTotal = subtotal 
+  const taxAmount = subtotal;
+
+  const grandTotal = subtotal;
 
   const fmt = (n) =>
-    n.toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    n.toLocaleString("en-NG", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
 
   // ── Line Item Handlers ────────────────────────────────────────────────────
   const updateLineItem = (index, field, value) => {
     setLineItems((prev) =>
-      prev.map((item, i) => (i === index ? { ...item, [field]: value } : item))
+      prev.map((item, i) => (i === index ? { ...item, [field]: value } : item)),
     );
   };
 
-  const addLineItem = () => setLineItems((prev) => [...prev, defaultLineItem()]);
-useEffect(() => {
-  if (!receipt) return;
+  const addLineItem = () =>
+    setLineItems((prev) => [...prev, defaultLineItem()]);
+  useEffect(() => {
+    if (!receipt) return;
 
-  setClientName(receipt.clientName ?? "");
+    setClientName(receipt.clientName ?? "");
 
-  setClientId(receipt.clientId ?? "");
-  setClientGender(receipt.clientGender ?? "m");
-  setReceiptID(receipt?.invoiceNumber ?? "");
+    setClientId(receipt.clientId ?? "");
+    setClientGender(receipt.clientGender ?? "m");
+    setReceiptID(receipt?.invoiceNumber ?? "");
 
-  setIssueDate(receipt.issueDate ? format(new Date(receipt.issueDate), "yyyy-MM-dd'T'HH:mm:ss") : "");
-  setCurrency(receipt.currency ?? "NGN");
+    setIssueDate(
+      receipt.issueDate
+        ? format(new Date(receipt.issueDate), "yyyy-MM-dd'T'HH:mm:ss")
+        : "",
+    );
+    setCurrency(receipt.currency ?? "NGN");
 
-
-
-  setLineItems(receipt.lineItems?.length ? receipt.lineItems.map((item) => ({
-    description: item.description ?? "",
-    quantity: Number(item.quantity) ?? 1,
-    unitPrice: Number(item.unitPrice) ?? 0,
-  })) : [defaultLineItem()]);
-}, [receipt]);
+    setLineItems(
+      receipt.lineItems?.length
+        ? receipt.lineItems.map((item) => ({
+            description: item.description ?? "",
+            quantity: Number(item.quantity) ?? 1,
+            unitPrice: Number(item.unitPrice) ?? 0,
+          }))
+        : [defaultLineItem()],
+    );
+  }, [receipt]);
 
   const removeLineItem = (index) => {
     if (lineItems.length === 1) return;
@@ -178,32 +188,32 @@ useEffect(() => {
       })),
       clientId: clientId.trim(),
       clientGender: clientGender.trim(),
-      receiptID: receiptID.trim()
+      receiptID: receiptID.trim(),
     };
 
-    if(receipt?.id){
-      updateInvoice.mutate({...payload, id: receipt.id}, {
-  
-        onSuccess: (result) => {
-          if (result.ok && result.data?.success) {
-            onSuccess?.(result.data.data);
-            onClose();
-          } else {
-            const msg =
-              result.data?.error?.details?.[0]?.message ||
-              result.data?.error?.message ||
-              "Failed to update invoice.";
-            setError(msg);
-          }
+    if (receipt?.id) {
+      updateInvoice.mutate(
+        { ...payload, id: receipt.id },
+        {
+          onSuccess: (result) => {
+            if (result.ok && result.data?.success) {
+              onSuccess?.(result.data.data);
+              onClose();
+            } else {
+              const msg =
+                result.data?.error?.details?.[0]?.message ||
+                result.data?.error?.message ||
+                "Failed to update invoice.";
+              setError(msg);
+            }
+          },
+          onError: () => {
+            setError("Network error. Please try again.");
+          },
         },
-        onError: () => {
-          setError("Network error. Please try again.");
-        },
-      });
-
-    }else{
+      );
+    } else {
       createInvoice.mutate(payload, {
-  
         onSuccess: (result) => {
           if (result.ok && result.data?.success) {
             onSuccess?.(result.data.data);
@@ -220,7 +230,6 @@ useEffect(() => {
           setError("Network error. Please try again.");
         },
       });
-
     }
   };
 
@@ -268,13 +277,13 @@ useEffect(() => {
         >
           <div>
             <div style={{ fontSize: 16, fontWeight: 800, color: C.text }}>
-              
-            {
-             receipt  &&  receipt?.id ? "Update Receipt":"Create Receipt"
-            }
+              {receipt && receipt?.id ? "Update Receipt" : "Create Receipt"}
             </div>
             <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>
-              Fill in the details below to { receipt  &&  receipt?.id ?"update receipt":"generate a new receipt"} 
+              Fill in the details below to{" "}
+              {receipt && receipt?.id
+                ? "update receipt"
+                : "generate a new receipt"}
             </div>
           </div>
           <button
@@ -293,8 +302,14 @@ useEffect(() => {
         </div>
 
         {/* ── Body ── */}
-        <div style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: 20 }}>
-
+        <div
+          style={{
+            padding: "20px 24px",
+            display: "flex",
+            flexDirection: "column",
+            gap: 20,
+          }}
+        >
           {/* Client Information */}
           <div
             style={{
@@ -319,9 +334,7 @@ useEffect(() => {
                   placeholder="e.g. Acme Corp"
                 />
               </Field>
-             
-             
-             
+
               <Field label="Patient ID">
                 <TextInput
                   value={clientId}
@@ -330,7 +343,7 @@ useEffect(() => {
                 />
               </Field>
 
-               <Field label="Gender">
+              <Field label="Gender">
                 <SelectInput
                   value={clientGender}
                   onChange={(e) => setClientGender(e.target.value)}
@@ -338,7 +351,7 @@ useEffect(() => {
                 />
               </Field>
 
-               <Field label="Receipt ID">
+              <Field label="Receipt ID">
                 <TextInput
                   value={receiptID}
                   onChange={(e) => setReceiptID(e.target.value)}
@@ -361,20 +374,40 @@ useEffect(() => {
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
+                gridTemplateColumns: "1fr 1fr 1fr",
                 gap: 14,
               }}
             >
-              <Field label="Issue Date" required>
-                <TextInput
-                      type="datetime-local"
-                      step={"1"}
-
-                  value={issueDate}
-                  onChange={(e) => setIssueDate(e.target.value)}
-                />
+              <Field
+                label="Issue Date"
+                required
+                style={{ gridColumn: "span 2" }}
+              >
+                <div style={{ display: "flex", gap: "8px" }}>
+                  <TextInput
+                    type="date"
+                    style={{ flex: 1 }}
+                    value={issueDate.split("T")[0] || ""}
+                    onChange={(e) =>
+                      setIssueDate(
+                        `${e.target.value}T${issueDate.split("T")[1] || "00:00:00"}`,
+                      )
+                    }
+                  />
+                  <TextInput
+                    type="time"
+                    step="1"
+                    style={{ flex: 1 }}
+                    value={issueDate.split("T")[1] || ""}
+                    onChange={(e) =>
+                      setIssueDate(
+                        `${issueDate.split("T")[0] || ""}T${e.target.value}`,
+                      )
+                    }
+                  />
+                </div>
               </Field>
-              
+
               <Field label="Currency">
                 <SelectInput
                   value={currency}
@@ -382,11 +415,7 @@ useEffect(() => {
                   options={CURRENCIES}
                 />
               </Field>
-             
-             
-            
             </div>
-           
           </div>
 
           {/* Line Items */}
@@ -396,7 +425,7 @@ useEffect(() => {
               borderRadius: 10,
               padding: "18px 20px",
               border: `1px solid ${C.border}`,
-              overflowX:"auto"
+              overflowX: "auto",
             }}
           >
             <div style={sectionTitle}>Line Items</div>
@@ -411,10 +440,22 @@ useEffect(() => {
                 padding: "0 4px",
               }}
             >
-              {["Description", "Qty", `Unit Price (${currency})`, "Total", ""].map((h) => (
+              {[
+                "Description",
+                "Qty",
+                `Unit Price (${currency})`,
+                "Total",
+                "",
+              ].map((h) => (
                 <div
                   key={h}
-                  style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.4px" }}
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 700,
+                    color: C.muted,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.4px",
+                  }}
                 >
                   {h}
                 </div>
@@ -422,10 +463,11 @@ useEffect(() => {
             </div>
 
             {/* Line item rows */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 ,  }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {lineItems.map((item, index) => {
                 const rowTotal =
-                  (parseFloat(item.quantity) || 0) * (parseFloat(item.unitPrice) || 0);
+                  (parseFloat(item.quantity) || 0) *
+                  (parseFloat(item.unitPrice) || 0);
                 return (
                   <div
                     key={index}
@@ -438,19 +480,25 @@ useEffect(() => {
                   >
                     <TextInput
                       value={item.description}
-                      onChange={(e) => updateLineItem(index, "description", e.target.value)}
+                      onChange={(e) =>
+                        updateLineItem(index, "description", e.target.value)
+                      }
                       placeholder="Item description"
                     />
                     <TextInput
                       type="number"
                       value={item.quantity}
-                      onChange={(e) => updateLineItem(index, "quantity", e.target.value)}
+                      onChange={(e) =>
+                        updateLineItem(index, "quantity", e.target.value)
+                      }
                       placeholder="1"
                     />
                     <TextInput
                       type="number"
                       value={item.unitPrice}
-                      onChange={(e) => updateLineItem(index, "unitPrice", e.target.value)}
+                      onChange={(e) =>
+                        updateLineItem(index, "unitPrice", e.target.value)
+                      }
                       placeholder="0.00"
                     />
                     <div
@@ -481,7 +529,8 @@ useEffect(() => {
                         justifyContent: "center",
                         flexShrink: 0,
                         opacity: lineItems.length === 1 ? 0.4 : 1,
-                        cursor: lineItems.length === 1 ? "not-allowed" : "pointer",
+                        cursor:
+                          lineItems.length === 1 ? "not-allowed" : "pointer",
                       }}
                     >
                       <Icon d={Icons.x} size={14} color={C.red} />
@@ -510,7 +559,8 @@ useEffect(() => {
                 justifyContent: "center",
               }}
             >
-              <Icon d={Icons.newReg} size={15} color={C.primary} /> Add Line Item
+              <Icon d={Icons.newReg} size={15} color={C.primary} /> Add Line
+              Item
             </button>
 
             {/* Totals */}
@@ -531,10 +581,22 @@ useEffect(() => {
               ].map(([label, val]) => (
                 <div
                   key={label}
-                  style={{ display: "flex", gap: 40, fontSize: 13, color: C.muted }}
+                  style={{
+                    display: "flex",
+                    gap: 40,
+                    fontSize: 13,
+                    color: C.muted,
+                  }}
                 >
                   <span style={{ fontWeight: 500 }}>{label}</span>
-                  <span style={{ fontWeight: 600, color: C.text, minWidth: 100, textAlign: "right" }}>
+                  <span
+                    style={{
+                      fontWeight: 600,
+                      color: C.text,
+                      minWidth: 100,
+                      textAlign: "right",
+                    }}
+                  >
                     {currency} {fmt(Math.abs(val))}
                     {label.startsWith("Discount") && val !== 0 ? " (-)" : ""}
                   </span>
@@ -553,7 +615,13 @@ useEffect(() => {
                 }}
               >
                 <span>Grand Total</span>
-                <span style={{ color: C.primary, minWidth: 100, textAlign: "right" }}>
+                <span
+                  style={{
+                    color: C.primary,
+                    minWidth: 100,
+                    textAlign: "right",
+                  }}
+                >
                   {currency} {fmt(grandTotal)}
                 </span>
               </div>
@@ -623,7 +691,7 @@ useEffect(() => {
               gap: 8,
             }}
           >
-            {loading|| updateInvoice.isPending ? "Submitting" : "Submit"}
+            {loading || updateInvoice.isPending ? "Submitting" : "Submit"}
           </button>
         </div>
       </div>
