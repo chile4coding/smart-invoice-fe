@@ -1,5 +1,5 @@
-const API_BASE_URL = "http://localhost:3133/api";
-// const API_BASE_URL = `https://smart-invoice-be.onrender.com/api`
+// const API_BASE_URL = "http://localhost:3133/api";
+const API_BASE_URL = `https://smart-invoice-be.onrender.com/api`
 
 const getAccessToken = () => localStorage.getItem("accessToken");
 
