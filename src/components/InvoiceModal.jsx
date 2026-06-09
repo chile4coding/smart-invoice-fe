@@ -48,13 +48,14 @@ function Field({ label, required, children }) {
   );
 }
 
-function TextInput({ value, onChange, placeholder, type = "text" }) {
+function TextInput({ value, onChange, placeholder, type = "text" , step=""}) {
   const [focused, setFocused] = useState(false);
   return (
     <input
       type={type}
       value={value}
       onChange={onChange}
+      step={step}
       placeholder={placeholder}
       style={inputStyle(focused)}
       onFocus={() => setFocused(true)}
@@ -102,6 +103,7 @@ export default function InvoiceModal({ onClose, onSuccess,  receipt }) {
   // Invoice Details
   const [issueDate, setIssueDate] = useState("");
   const [currency, setCurrency] = useState("NGN");
+  const [receiptID,  setReceiptID] =  useState("")
 
   // Line Items
   const [lineItems, setLineItems] = useState([defaultLineItem()]);
@@ -134,6 +136,7 @@ useEffect(() => {
 
   setClientId(receipt.clientId ?? "");
   setClientGender(receipt.clientGender ?? "m");
+  setReceiptID(receipt?.invoiceNumber ?? "");
 
   setIssueDate(receipt.issueDate ? format(new Date(receipt.issueDate), "yyyy-MM-dd'T'HH:mm") : "");
   setCurrency(receipt.currency ?? "NGN");
@@ -173,7 +176,8 @@ useEffect(() => {
         unitPrice: Number(item.unitPrice),
       })),
       clientId: clientId.trim(),
-      clientGender: clientGender.trim()
+      clientGender: clientGender.trim(),
+      receiptID: receiptID.trim()
     };
 
     if(receipt?.id){
@@ -332,6 +336,14 @@ useEffect(() => {
                   options={["m", "f"]}
                 />
               </Field>
+
+               <Field label="Receipt ID">
+                <TextInput
+                  value={receiptID}
+                  onChange={(e) => setReceiptID(e.target.value)}
+                  placeholder="....."
+                />
+              </Field>
             </div>
           </div>
 
@@ -355,6 +367,7 @@ useEffect(() => {
               <Field label="Issue Date" required>
                 <TextInput
                       type="datetime-local"
+                      step={"1"}
 
                   value={issueDate}
                   onChange={(e) => setIssueDate(e.target.value)}
@@ -609,7 +622,7 @@ useEffect(() => {
               gap: 8,
             }}
           >
-            {loading ? "Creating..." : "Create receipt"}
+            {loading|| updateInvoice.isPending ? "Submitting" : "Submit"}
           </button>
         </div>
       </div>
