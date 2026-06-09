@@ -430,7 +430,7 @@ export default function InvoiceModal({ onClose, onSuccess, receipt }) {
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "1fr 80px 120px 100px 36px",
+                gridTemplateColumns: "80px 80px 120px 100px 36px",
                 gap: 8,
                 marginBottom: 8,
                 padding: "0 4px",
