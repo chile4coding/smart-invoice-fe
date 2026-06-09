@@ -374,39 +374,35 @@ export default function InvoiceModal({ onClose, onSuccess, receipt }) {
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "1fr 1fr 1fr",
+                gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
                 gap: 14,
               }}
             >
-              <Field
-                label="Issue Date"
-                required
-                style={{ gridColumn: "span 2" }}
-              >
-                <div style={{ display: "flex", gap: "8px" }}>
-                  <TextInput
-                    type="date"
-                    style={{ flex: 1 }}
-                    value={issueDate.split("T")[0] || ""}
-                    onChange={(e) =>
-                      setIssueDate(
-                        `${e.target.value}T${issueDate.split("T")[1] || "00:00:00"}`,
-                      )
-                    }
-                  />
-                  <TextInput
-                    type="time"
-                    step="1"
-                    style={{ flex: 1 }}
-                    value={issueDate.split("T")[1] || ""}
-                    onChange={(e) =>
-                      setIssueDate(
-                        `${issueDate.split("T")[0] || ""}T${e.target.value}`,
-                      )
-                    }
-                  />
-                </div>
+              <Field label="Issue Date" required>
+                <TextInput
+                  type="date"
+                  value={issueDate.split("T")[0] || ""}
+                  onChange={(e) =>
+                    setIssueDate(
+                      `${e.target.value}T${issueDate.split("T")[1] || "00:00:00"}`,
+                    )
+                  }
+                />
               </Field>
+              <Field label="Issue Time" required>
+                <TextInput
+                  type="time"
+                  step="1"
+                  style={{ flex: 1, minWidth: "120px" }}
+                  value={issueDate.split("T")[1] || ""}
+                  onChange={(e) =>
+                    setIssueDate(
+                      `${issueDate.split("T")[0] || ""}T${e.target.value}`,
+                    )
+                  }
+                />
+              </Field>
+              {/* </div> */}
 
               <Field label="Currency">
                 <SelectInput
