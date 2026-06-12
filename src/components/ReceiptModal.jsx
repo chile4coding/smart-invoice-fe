@@ -1,7 +1,7 @@
 import { format } from "date-fns";
 import { C } from "../constants/colors";
 import { Icon, Icons } from "../constants/icons";
-import {  fmtAmount, getFullName } from "../lib/utils";
+import { fmtAmount, getFullName } from "../lib/utils";
 import printJS from "print-js";
 
 const items = [
@@ -53,17 +53,16 @@ const PRINT_STYLES = `
 `;
 
 export default function ReceiptModal({ onClose, receipt = {} }) {
+  const handlePrint = () => {
+    // Remove previous injected styles/container if any
+    document.getElementById("receipt-print-styles")?.remove();
+    document.getElementById("receipt-print-copy")?.remove();
 
-const handlePrint = () => {
-  // Remove previous injected styles/container if any
-  document.getElementById("receipt-print-styles")?.remove();
-  document.getElementById("receipt-print-copy")?.remove();
-
-  // Build the receipt HTML
-  const receiptHTML = getReceiptHTML();
-  printJS({
-    type:"raw-html",
-    printable:receiptHTML,
+    // Build the receipt HTML
+    const receiptHTML = getReceiptHTML();
+    printJS({
+      type: "raw-html",
+      printable: receiptHTML,
       style: `
       * {
       
@@ -82,12 +81,8 @@ const handlePrint = () => {
 
       }
     `,
-  })
-
-
-
-};
-
+    });
+  };
 
   const getReceiptHTML = () => `
 <div
@@ -156,9 +151,11 @@ const handlePrint = () => {
         </tr>
       </thead>
       <tbody>
-        ${receipt.lineItems.map((item) => `
+        ${receipt.lineItems
+          .map(
+            (item) => `
           <tr>
-            <td style="padding: 3px 6px; color: ${C.text}; line-height: 1.4; word-break: break-word; text-transform: uppercase; font-weight: 500;">
+            <td style="padding: 3px 6px; color: ${C.text}; line-height: 1.4; word-break: break-word; font-weight: 500;">
               ${item?.description}
             </td>
             <td style="padding: 3px 6px; text-align: center; color: ${C.text}; white-space: nowrap; font-weight: 500;">
@@ -168,7 +165,9 @@ const handlePrint = () => {
               ${fmtAmount(item?.total, receipt.currency)}
             </td>
           </tr>
-        `).join("")}
+        `,
+          )
+          .join("")}
 
         <tr>
           <td colspan="3">
@@ -286,9 +285,8 @@ const handlePrint = () => {
               style={{
                 fontSize: 12,
                 fontWeight: 700,
-                
-                                color: C.text,
 
+                color: C.text,
               }}
             >
               Rivers State University Teaching Hospital
@@ -296,11 +294,8 @@ const handlePrint = () => {
 
             <div style={{ height: 1, background: C.border, margin: "0 8px" }} />
           </div>
-
           {/* Reprinted / Transaction Code */}
-       
-
-           <div
+          <div
             style={{
               display: "grid",
               gridTemplateColumns: "1fr 1fr",
@@ -310,18 +305,17 @@ const handlePrint = () => {
               margin: "2px 6px",
             }}
           >
-
             <div>
-                          <span style={{ fontWeight: 700, color: C.text }}>Original Receipt</span>
-
+              <span style={{ fontWeight: 700, color: C.text }}>
+                Original Receipt
+              </span>
             </div>
 
             <div style={{ fontWeight: 700, color: C.primaryTableColor }}>
-                Transaction Code -
-              </div>
+              Transaction Code -
+            </div>
           </div>
           <div style={{ height: 1, background: C.border, marginBottom: 12 }} />
-
           {/* Info grid */}
           <div
             style={{
@@ -346,7 +340,7 @@ const handlePrint = () => {
               <div
                 style={{
                   fontWeight: 600,
-                  
+
                   fontFamily: "'JetBrains Mono', monospace",
                   color: C.text,
                 }}
@@ -384,8 +378,13 @@ const handlePrint = () => {
               >
                 Patient Name
               </div>
-              <div style={{ fontWeight: 600, color: C.text ,                   textTransform:"uppercase"
-}}>
+              <div
+                style={{
+                  fontWeight: 600,
+                  color: C.text,
+                  textTransform: "uppercase",
+                }}
+              >
                 {receipt.clientName}
               </div>
             </div>
@@ -404,7 +403,6 @@ const handlePrint = () => {
               </div>
             </div>
           </div>
-
           {/* Items table */}
           <div style={{ overflowX: "auto", marginBottom: 6 }}>
             <table
@@ -460,8 +458,8 @@ const handlePrint = () => {
                         color: C.primaryTableColor,
                         lineHeight: 1.4,
                         wordBreak: "break-word",
-                        textTransform:"uppercase",
-                        fontWeight:600
+                        textTransform: "uppercase",
+                        fontWeight: 600,
                       }}
                     >
                       {item?.description}
@@ -472,9 +470,7 @@ const handlePrint = () => {
                         textAlign: "center",
                         color: C.primaryTableColor,
                         whiteSpace: "nowrap",
-                                                fontWeight:600
-
-                        
+                        fontWeight: 600,
                       }}
                     >
                       {item?.quantity}
@@ -531,7 +527,6 @@ const handlePrint = () => {
               </tbody>
             </table>
           </div>
-
           {/* Payment details */}
           <div style={{ fontSize: 13 }}>
             <div
@@ -552,8 +547,7 @@ const handlePrint = () => {
             </div>
             {[
               ["Waived Amount", fmtAmount(receipt.discount, receipt.currency)],
-              ["Amount Paid", fmtAmount(receipt?.grandTotal
-, receipt.currency)],
+              ["Amount Paid", fmtAmount(receipt?.grandTotal, receipt.currency)],
               ["Payment Type", ""],
               ["Cashier", getFullName(receipt.createdBy)],
             ].map(([k, v]) => (
@@ -569,13 +563,13 @@ const handlePrint = () => {
                 }}
               >
                 <span style={{ color: C.primaryTableColor }}>{k}</span>
-                <span style={{ fontWeight: 600, color: C.primaryTableColor }}>{v}</span>
+                <span style={{ fontWeight: 600, color: C.primaryTableColor }}>
+                  {v}
+                </span>
               </div>
             ))}
           </div>
-
           <div style={{ height: 1, background: C.border }} />
-
           {/* Print button */}
           <div
             id="receipt-print-btn"
@@ -605,8 +599,8 @@ const handlePrint = () => {
               Print
             </button>
           </div>
-
-          <div style={{ height: 1, background: C.border }} />        </div>
+          <div style={{ height: 1, background: C.border }} />{" "}
+        </div>
       </div>
     </div>
   );
