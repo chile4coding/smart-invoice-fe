@@ -644,7 +644,7 @@ const [confirm, setConfirm] = useState({ open: false, id: null, number: null });
                         <td
                           style={{ padding: "13px 16px", whiteSpace: "nowrap" }}
                         >
-                          Payment Receipt
+                          PAYMENT RECEIPT
                         </td>
                         <td
                           style={{ padding: "13px 16px", whiteSpace: "nowrap" }}
@@ -773,7 +773,7 @@ const [confirm, setConfirm] = useState({ open: false, id: null, number: null });
                     opacity: page === 1 ? 0.5 : 1,
                   }}
                 >
-                  ← Prev
+                  <Icon d={Icons.chevronLeft}/>
                 </button>
                 {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                   const p = Math.max(1, Math.min(page - 2, totalPages - 4)) + i;
@@ -811,7 +811,8 @@ const [confirm, setConfirm] = useState({ open: false, id: null, number: null });
                     opacity: page === totalPages ? 0.5 : 1,
                   }}
                 >
-                  Next →
+                                   <Icon d={Icons.chevronRight}/>
+
                 </button>
               </div>
             </div>

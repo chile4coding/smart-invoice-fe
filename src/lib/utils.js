@@ -20,7 +20,7 @@ export const formatRelativeDate = (dateInput) => {
     return result.charAt(0).toUpperCase() + result.slice(1);
   }
 
-  return format(date, "dd-MM-yyyy hh:mm:ss a");
+  return format(date, "dd/MM/yyyy");
 };
 export const getCurrencySymbol = (currency = "NGN") => {
   return new Intl.NumberFormat("en", {
@@ -35,7 +35,7 @@ export const getCurrencySymbol = (currency = "NGN") => {
 
 
 export const fmtAmount = (val, currency = "NGN") => {
-  const symbol = currency === "USD" ? "$" : currency === "GBP" ? "£" : "₦";
+  const symbol = currency === "USD" ? "$" : currency === "NGN" ? "₦" : "";
   return `${symbol}${(val ).toLocaleString("en-NG", { minimumFractionDigits: 2 })}`;
 };
 

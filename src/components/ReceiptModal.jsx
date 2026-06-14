@@ -66,18 +66,22 @@ export default function ReceiptModal({ onClose, receipt = {} }) {
       style: `
       * {
       
-      @import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap");
- font-family: "Plus Jakarta Sans", sans-serif;
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+    font-family: 'Poppins', sans-serif;
    box-sizing: border-box;
   margin: 0;
   padding: 0;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
         color-adjust: exact !important;
+        font-size:12px !important;
+        
       }
     
       body {
         margin: 0px;
+        font-size:1rem !important;
+       
 
       }
     `,
@@ -155,7 +159,7 @@ export default function ReceiptModal({ onClose, receipt = {} }) {
           .map(
             (item) => `
           <tr>
-            <td style="padding: 3px 6px; color: ${C.text}; line-height: 1.4; word-break: break-word; font-weight: 500;">
+            <td style="padding: 3px 6px; color: ${C.text}; line-height: 1.4;  font-weight: 500;">
               ${item?.description}
             </td>
             <td style="padding: 3px 6px; text-align: center; color: ${C.text}; white-space: nowrap; font-weight: 500;">
@@ -176,8 +180,8 @@ export default function ReceiptModal({ onClose, receipt = {} }) {
         </tr>
         <tr>
           <td style="padding: 7px 6px; font-weight: 700; font-size: 14px; color: ${C.text};">Total</td>
-          <td></td>
-          <td style="padding: 7px 6px; margin-right:"4px"; font-weight: 700; font-size: 14px; color: ${C.text}; text-align: right; white-space: nowrap;">
+          
+          <td colspan="2" style="padding: 7px 6px; margin-right:4px; font-weight: 700; font-size: 14px; color: ${C.text}; text-align: right; white-space: nowrap;">
             ${fmtAmount(receipt.grandTotal, receipt.currency)}
           </td>
         </tr>
@@ -209,8 +213,8 @@ export default function ReceiptModal({ onClose, receipt = {} }) {
       <span style="font-weight: 500; color: ${C.text};"></span>
     </div>
     <div style="display: flex; justify-content: space-between; padding-top: 4px; padding-right: 6px; padding-left: 6px;">
-      <span style="color: ${C.text};">Cashier</span>
-      <span style="font-weight: 500; color: ${C.text};">${getFullName(receipt.createdBy)}</span>
+      <span style="color: ${C.text}; flex: 1;">Cashier</span>
+      <span style="font-weight: 500; color: ${C.text}; flex:1;  text-align:right;">${getFullName(receipt.createdBy)}</span>
     </div>
   </div>
 
@@ -230,6 +234,7 @@ export default function ReceiptModal({ onClose, receipt = {} }) {
         justifyContent: "center",
         zIndex: 100,
         padding: 20,
+      
       }}
     >
       <div
@@ -458,7 +463,6 @@ export default function ReceiptModal({ onClose, receipt = {} }) {
                         color: C.primaryTableColor,
                         lineHeight: 1.4,
                         wordBreak: "break-word",
-                        textTransform: "uppercase",
                         fontWeight: 600,
                       }}
                     >

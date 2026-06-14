@@ -17,7 +17,7 @@ const SUPER_ADMIN_LINKS = [
 ];
 
 const getInitials = (user) =>
-  `${user?.firstName?.[0] ?? ""}${user?.lastName?.[0] ?? ""}`.toUpperCase() || "?";
+  `${user?.firstName?.[0] ?? ""}.${user?.lastName?.[0] ?? ""}`.toLowerCase() || "?";
 
 const getRoleLabel = (role) => {
   if (role === "SUPER_ADMIN") return "Super Admin";
@@ -52,7 +52,7 @@ export default function Sidebar({ mobileOpen, setMobileOpen }) {
     nav: { flex: 1, padding: "12px 0" },
     link: (active) => ({
       display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", cursor: "pointer",
-      color: active ? C.white : "rgba(255,255,255,0.6)", background: active ? C.primary : "transparent",
+      color: active ? C.primary : "rgba(255,255,255,0.6)", background: active ? C.white : "transparent",
       borderRadius: 8, margin: "2px 8px", fontSize: 14, fontWeight: active ? 600 : 500,
       transition: "all 0.15s", userSelect: "none",
     }),
@@ -64,9 +64,9 @@ export default function Sidebar({ mobileOpen, setMobileOpen }) {
     }),
     dot: { width: 6, height: 6, borderRadius: "50%", background: "currentColor", flexShrink: 0 },
     userBox: { padding: "12px 16px", borderTop: `1px solid rgba(255,255,255,0.08)`, display: "flex", alignItems: "center", gap: 10,  background:"#9BABFF" },
-    avatar: { width: 36, height: 36, borderRadius: 8, background: C.white, display: "flex", alignItems: "center", justifyContent: "center", color: C.primary, fontSize: 12, fontWeight: 700, flexShrink: 0 },
-    userName: { color: C.white, fontSize: 16, fontWeight: 600, lineHeight: 1.3 },
-    userRole: { color: C.text,fontSize: 11, background:C.white,  padding:"3px", borderRadius:"3px",  fontWeight:700,  textAlign:"center" },
+    avatar: { width: 40, height: 40, borderRadius: 8, background: C.white, display: "flex", alignItems: "end", paddingBottom:"4px", justifyContent: "center", color: C.primary, fontSize: 18, fontWeight: 700, flexShrink: 0 },
+    userName: { color: C.white, fontSize: 14, fontWeight: 600, lineHeight: 1.3 },
+    userRole: { color: C.text,fontSize: 10, background:C.white,  padding:"3px", borderRadius:"3px",  fontWeight:500,  textAlign:"center" },
   };
 
   const handleNav = (id) => {
@@ -115,7 +115,7 @@ export default function Sidebar({ mobileOpen, setMobileOpen }) {
           <div style={s.userName}>
             {user ? `${user.firstName} ${user.lastName}` : "…"}
           </div>
-          <div style={s.userRole}>Payment Officer</div>
+          <div ><span style={s.userRole}>Payment Officer</span></div>
         </div>
       </div>
     </>
