@@ -6,7 +6,7 @@ import { useAuth } from "../hooks/useAuth";
 
 const BASE_LINKS = [
   { id: "dashboard", label: "Dashboard", icon: Icons.dashboard },
-  { id: "payments", label: "Payments", icon: Icons.payments, children: ["Central Payment", "Make Payment", "Post Bill"] },
+  { id: "payments", label: "Payments", icon: Icons.payments, children: [{id:"payment", label:"Central Payment"}, {id:"",label:"Make Payment"}, {id:"", label:"Post Bill"}] },
   { id: "reports", label: "Reports", icon: Icons.reports },
   { id: "receipt", label: "Receipt History", icon: Icons.receipt },
   { id: "profile", label: "Profile", icon: Icons.profile },
@@ -70,7 +70,7 @@ export default function Sidebar({ mobileOpen, setMobileOpen }) {
   };
 
   const handleNav = (id) => {
-    if(!["dashboard", "receipt", "profile","users"].includes(id)){
+    if(!["dashboard", "receipt", "profile","users", "payment"].includes(id)){
       return
     }
     navigate(`/${id}`);
@@ -97,9 +97,9 @@ export default function Sidebar({ mobileOpen, setMobileOpen }) {
               {link.children && <Icon d={expanded[link.id] ? Icons.chevronDown : Icons.chevronRight} size={14} color="currentColor" />}
             </div>
             {link.children && !expanded[link.id] && link.children.map(child => (
-              <div key={child} style={s.subLink(false)} onClick={() => handleNav(link.id)}>
+              <div key={child.id} style={s.subLink(false)} onClick={() => handleNav(child.id)}>
                 <span style={s.dot} />
-                {child}
+                {child.label}
               </div>
             ))}
           </div>

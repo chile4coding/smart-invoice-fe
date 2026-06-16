@@ -9,6 +9,7 @@ import ProfilePage from "./pages/ProfilePage";
 import ReceiptHistoryPage from "./pages/ReceiptHistoryPage";
 import UsersPage from "./pages/Users";
 import { useAuth } from "./hooks/useAuth";
+import CentralPaymentPage from "./pages/CentralPayment";
 function ProtectedLayout() {
   const { isAuthenticated, isLoading } = useAuth();
 
@@ -44,6 +45,7 @@ export default function App() {
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/receipt" element={<ReceiptHistoryPage />} />
             <Route path="/users" element={<UsersPage />} />
+            <Route path="/payment" element={<CentralPaymentPage />} />
           </Route>
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
