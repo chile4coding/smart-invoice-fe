@@ -97,7 +97,7 @@ export default function Sidebar({ mobileOpen, setMobileOpen }) {
               {link.children && <Icon d={expanded[link.id] ? Icons.chevronDown : Icons.chevronRight} size={14} color="currentColor" />}
             </div>
             {link.children && !expanded[link.id] && link.children.map(child => (
-              <div key={child.id} style={s.subLink(false)} onClick={() => handleNav(child.id)}>
+              <div key={child.id} style={s.link(currentPage === child.id)} onClick={() => handleNav(child.id)}>
                 <span style={s.dot} />
                 {child.label}
               </div>
