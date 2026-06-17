@@ -1,46 +1,56 @@
 import React, { useState } from 'react';
-import AsyncSelect from 'react-select/async';
+import AsyncCreatableSelect from 'react-select/async-creatable';
 import { AlertCircle } from 'lucide-react';
 import './BillPostingForm.css';
+import { apiClient } from '../lib/api';
+import { useDepartments, useUnits } from '../lib/apiHooks';
+import { fmtAmount } from '../lib/utils';
 
 const PAGE_SIZE = 10;
 
-export default function BillPostingForm() {
+export default function BillPostingForm({
+  draft = { unit: null, billName: null, amount: '' }, setDraft,
+  bills = [], setBills,
+  discountCode = "",
+  setDiscountCode,
+  handleSubmit
+
+}) {
+  const [departmentId, setDepartmentId] = useState("");
+  const [isAmountFocused, setIsAmountFocused] = useState(false);
+  const [page, setPage] = useState(1);
+
+
+  const getDepartment = useDepartments()
+  const getUnit = useUnits()
   // Replace with real API calls
   const loadDepartments = async (input) => {
-    const all = [
-      { value: 1, label: 'ACCIDENT AND EMERGENCY' },
-      { value: 2, label: 'Cardiology' },
-      { value: 3, label: 'Radiology' },
-      { value: 4, label: 'Pharmacy' },
-      { value: 5, label: 'Laboratory' },
-    ];
-    return all.filter((o) => o.label.toLowerCase().includes(input.toLowerCase()));
+    let data = await getDepartment(input, 1, 100)
+    data = data?.departments?.map((department) => ({
+      ...department,
+      label: department?.name || "",
+      value: department?.name || ""
+    }))
+
+    return data
   };
 
   const loadBillNames = async (input) => {
-    const all = [
-      { value: 1, label: 'CONSULTATION FEE - A&E' },
-      { value: 2, label: 'Lab Test' },
-      { value: 3, label: 'X-Ray' },
-      { value: 4, label: 'Drug Dispensing' },
-    ];
-    return all.filter((o) => o.label.toLowerCase().includes(input.toLowerCase()));
+    if (!departmentId) return [];
+    const data = await getUnit(input, 1, 100, departmentId);
+    return data?.fees?.map((fee) => ({
+      ...fee,
+      label: fee.billname,
+      value: fee.billname,
+    }));
   };
-
-  // Draft (the input row at the top)
-  const [draft, setDraft] = useState({ unit: null, billName: null, amount: '' });
-  // Added bill lines shown in the table
-  const [bills, setBills] = useState([]);
-  // Pagination
-  const [page, setPage] = useState(1);
-  // Discount code
-  const [discountCode, setDiscountCode] = useState('');
 
   const total = bills.reduce((sum, b) => sum + Number(b.amount || 0), 0);
 
   const totalPages = Math.max(1, Math.ceil(bills.length / PAGE_SIZE));
   const pagedBills = bills.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+
 
   function handleAdd() {
     if (!draft.unit || !draft.billName || !draft.amount) return;
@@ -56,12 +66,7 @@ export default function BillPostingForm() {
     setPage((p) => Math.min(p, Math.max(1, Math.ceil((bills.length - 1) / PAGE_SIZE))));
   }
 
-  function handleSubmit(e) {
-    e.preventDefault();
-    if (bills.length === 0) return;
-    console.log({ bills, discountCode });
-    // Call your API here
-  }
+
 
   return (
     <div className="bpf-container">
@@ -69,34 +74,83 @@ export default function BillPostingForm() {
       <div className="bpf-input-row">
         <div className="bpf-field">
           <label className="bpf-label">Unit</label>
-          <AsyncSelect
-            placeholder="Select clinic/department"
+        
+
+          <AsyncCreatableSelect
+            placeholder="Select or create clinic/department"
             loadOptions={loadDepartments}
+            defaultOptions
             value={draft.unit}
-            onChange={(opt) => setDraft((d) => ({ ...d, unit: opt }))}
+            onChange={(opt) => {
+
+              console.log("this is the a department: ",  opt)
+              setDraft((d) => ({ ...d, unit: opt, billName: "", amount: 0 }))
+              setDepartmentId(opt.id);
+            }}
+            onCreateOption={async (inputValue) => {
+              // call your API here to actually create the department
+              // const newDepartment = await createDepartment(inputValue);
+
+              const newOption = {
+                label: inputValue,
+                value: inputValue,
+              };
+
+              setDraft((d) => ({ ...d, unit: newOption, billName: "", amount: 0 }));
+              setDepartmentId(inputValue);
+            }}
             components={{ IndicatorSeparator: () => null }}
-            
           />
         </div>
 
         <div className="bpf-field">
           <label className="bpf-label">Name of bill</label>
-          <AsyncSelect
-            placeholder="Select bill"
+          <AsyncCreatableSelect
+            placeholder="Select or create bill"
             loadOptions={loadBillNames}
+            key={departmentId || "no-department"}
             value={draft.billName}
+            defaultOptions
+            isDisabled={!departmentId}
             components={{ IndicatorSeparator: () => null }}
-            onChange={(opt) => setDraft((d) => ({ ...d, billName: opt }))}
+            onChange={(opt) =>{
+              console.log("this is the option: here: " ,)
+              setDraft((d) => ({ ...d, billName: opt, amount: opt.billcost }))}
+          }
+            onCreateOption={async (inputValue) => {
+              // const newFee = await createBill({ billName: inputValue, departmentId });
+
+              const newOption = {
+                // ...newFee,
+                label: inputValue,
+                value: inputValue,
+              };
+
+              setDraft((d) => ({ ...d, billName: newOption, amount: 0 }));
+            }}
           />
         </div>
+
 
         <div className="bpf-field bpf-field--amount">
           <label className="bpf-label">Amount</label>
           <input
-            type="number"
+            type="text"
+            inputMode="decimal"
             className="bpf-amount-input"
-            value={draft.amount}
-            onChange={(e) => setDraft((d) => ({ ...d, amount: e.target.value }))}
+            value={
+              isAmountFocused
+                ? draft.amount
+                : draft.amount
+                  ? fmtAmount(Number(draft.amount), "NGN")
+                  : ""
+            }
+            onFocus={() => setIsAmountFocused(true)}
+            onBlur={() => setIsAmountFocused(false)}
+            onChange={(e) => {
+              const raw = e.target.value.replace(/[^0-9.]/g, "");
+              setDraft((d) => ({ ...d, amount: raw }));
+            }}
             placeholder="0"
           />
         </div>
@@ -106,7 +160,6 @@ export default function BillPostingForm() {
         type="button"
         className="bpf-add-btn"
         onClick={handleAdd}
-        disabled={!draft.unit || !draft.billName || !draft.amount}
       >
         Add
       </button>
@@ -129,8 +182,7 @@ export default function BillPostingForm() {
             {pagedBills.length === 0 ? (
               <tr>
                 <td colSpan={5} className="bpf-empty">
-                  No bills added yet.
-                </td>
+                  No data available in table                </td>
               </tr>
             ) : (
               pagedBills.map((bill, i) => {
@@ -217,7 +269,6 @@ export default function BillPostingForm() {
       <button
         type="button"
         className="bpf-post-btn"
-        disabled={bills.length === 0}
         onClick={handleSubmit}
       >
         Post

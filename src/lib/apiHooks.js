@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "./api";
+import { useCallback } from "react";
 
 export const useLogin = () => {
   return useMutation({
@@ -210,3 +211,36 @@ export const useUpdateUserProfile = () => {
     },
   });
 };
+
+export const useDepartments = () => {
+  const fetchDepartments = useCallback(async (search = "", page = 1, limit = 10) => {
+    const sp = new URLSearchParams({ page, limit });
+    sp.set("search", search);
+    const result = await apiClient.get(`/departments?${sp.toString()}`);
+    if (!result.ok)
+      throw new Error(
+        result.data?.error?.message || "Failed to load departments",
+      );
+    return result.data.data;
+  }, []);
+
+  return fetchDepartments;
+};
+
+export const useUnits = () => {
+  const fetchUnits = useCallback(async (search = "", page = 1, limit = 10, id="") => {
+    if(!id)return []
+    const sp = new URLSearchParams({ page, limit });
+    sp.set("search", search);
+
+    const result = await apiClient.get(`/departments/${id}/fees?${sp.toString()}`);
+    if (!result.ok)
+      throw new Error(
+        result.data?.error?.message || "Failed to load departments",
+      );
+    return result.data.data;
+  }, []);
+
+  return fetchUnits;
+};
+

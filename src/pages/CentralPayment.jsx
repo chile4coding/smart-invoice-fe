@@ -6,6 +6,8 @@ import {
   useInvoices,
   useUpdateInvoiceStatus,
   useDeleteInvoice,
+  useCreateInvoice,
+  useUpdateInvoice,
 } from "../lib/apiHooks";
 import InvoiceModal from "../components/InvoiceModal";
 import ReceiptModal from "../components/ReceiptModal";
@@ -13,6 +15,7 @@ import { apiClient } from "../lib/api";
 import { fmtAmount, formatRelativeDate, getInitials } from "../lib/utils";
 import ConfirmDialog from "../components/Confirmable";
 import BillPostingForm from "../components/BillPost";
+import PatientModal from "../components/PatientModal";
 
 const LIMIT = 10;
 const MOCK_PATIENT = {
@@ -97,11 +100,12 @@ const styles = {
   patientCard: {
     background: C.cardBlue,
     borderRadius: 6,
-    padding: "1.25rem 1.5rem",
+    padding: "2rem 1.5rem",
     display: "flex",
     alignItems: "center",
     gap: "1.25rem",
-    marginBottom: "1.5rem",
+    margin: "1.5rem",
+
   },
   avatar: {
     width: 100,
@@ -250,7 +254,10 @@ function StatusSelect({ invoiceId, currentStatus }) {
     </select>
   );
 }
-
+const tabs = [
+  { key: "post", label: "Post" },
+  { key: "list", label: "List" },
+];
 export default function CentralPaymentPage() {
   const { hasRole } = useAuth();
   const canManage = hasRole("ADMIN");
@@ -262,16 +269,32 @@ export default function CentralPaymentPage() {
   const [statusFilter, setStatusFilter] = useState("");
   const [showInvoice, setShowInvoice] = useState(false);
   const [singleInvoice, setSingleInvoice] = useState({});
-
+  const [hideSearch, setHideSearch] = useState(true)
   // ── Patient search state ──────────────────────────────────────
   const [patientIdInput, setPatientIdInput] = useState("");
   const [patientLoading, setPatientLoading] = useState(false);
+  const [receipt, setReceipt] = useState({})
+  const [activeTab, setActiveTab] = useState("post");
 
+  const createInvoice = useCreateInvoice();
+  const updateInvoice = useUpdateInvoice();
+  const loadingCreate = createInvoice.isPending;
+  const loadingUpdate = updateInvoice.isPending
+  // Draft (the input row at the top)
+  const [draft, setDraft] = useState({ unit: null, billName: null, amount: '' });
+  // Added bill lines shown in the table
+  const [bills, setBills] = useState([]);
+  // Pagination
+  // Discount code
+  const [discountCode, setDiscountCode] = useState('');
+
+  const [addPatient, setAddPatient] = useState(false)
   const handlePatientSearch = async () => {
     setSearch(patientIdInput.trim());
+
   };
   // ─────────────────────────────────────────────────────────────
-const [confirm, setConfirm] = useState({ open: false, id: null, number: null });
+  const [confirm, setConfirm] = useState({ open: false, id: null, number: null });
 
   const { data, isLoading, error } = useInvoices({
     page,
@@ -306,6 +329,7 @@ const [confirm, setConfirm] = useState({ open: false, id: null, number: null });
         ) ?? 0;
 
       return {
+        ...patientData,
         name,
         initials: getInitials(patientData?.clientName),
         name: patientData?.clientName,
@@ -317,6 +341,21 @@ const [confirm, setConfirm] = useState({ open: false, id: null, number: null });
 
     return null;
   }, [data]);
+
+  useEffect(() => {
+
+    if (patient) {
+      setReceipt({
+        ...patient,
+        issueDate: "",
+        id: ""
+
+      })
+
+      setHideSearch(false)
+
+    }
+  }, [patient])
 
   const handleDelete = (id, invoiceNumber) => {
     if (
@@ -342,6 +381,87 @@ const [confirm, setConfirm] = useState({ open: false, id: null, number: null });
       });
   };
 
+  function handleSubmit(e) {
+    e.preventDefault();
+    if (bills.length === 0) return;
+
+    setAddPatient(true)
+
+    // Call your API here
+  }
+
+  const handleFinalSubmit = async (payload) => {
+
+    // get the bill and format properly
+
+    const load = {
+      ...payload,
+      currency: "NGN",
+      lineItems: bills.map((item) => ({
+        description: item?.billName?.label,
+        quantity: 1,
+        unitPrice: Number(item?.amount || 0),
+        unit: item?.unit?.label
+      })),
+
+    };
+
+
+    if (receipt?.id) {
+      updateInvoice.mutate(
+        { ...load, id: receipt.id },
+        {
+          onSuccess: (result) => {
+            if (result.ok && result.data?.success) {
+              setSingleInvoice(result.data.data)
+              setPatientIdInput(result?.data?.data?.clientId)
+              handlePatientSearch()
+
+              setShowInvoiceDetails(true)
+
+              setAddPatient(false);
+              setBills([])
+            } else {
+              const msg =
+                result.data?.error?.details?.[0]?.message ||
+                result.data?.error?.message ||
+                "Failed to update invoice.";
+              setError(msg);
+            }
+          },
+          onError: () => {
+            setError("Network error. Please try again.");
+          },
+        },
+      );
+    } else {
+      createInvoice.mutate(load, {
+        onSuccess: (result) => {
+          if (result.ok && result.data?.success) {
+            setSingleInvoice(result.data.data)
+            setPatientIdInput(result?.data?.data?.clientId)
+            handlePatientSearch()
+            setShowInvoiceDetails(true)
+
+            setAddPatient(false)
+            setBills([])
+          } else {
+            const msg =
+              result.data?.error?.details?.[0]?.message ||
+              result.data?.error?.message ||
+              "Failed to create receipt.";
+            setError(msg);
+          }
+        },
+        onError: () => {
+          setError("Network error. Please try again.");
+        },
+      });
+    }
+
+  }
+
+
   return (
     <>
       <style>{`@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }`}</style>
@@ -360,49 +480,61 @@ const [confirm, setConfirm] = useState({ open: false, id: null, number: null });
         />
       )}
 
-      <div >
-        <div style={{display:"flex", marginBottom:24,  justifyContent:"space-between", alignItems:"center"}}>
+      <div className="central-payment" >
+        <div style={{ display: "flex", marginBottom: 24, justifyContent: "space-between", alignItems: "center" }}>
           <div >
             <h1 style={{ fontSize: 22, fontWeight: 800, color: C.text }}>Central Payment</h1>
             <p style={{ fontSize: 13, color: C.muted, marginTop: 3 }}>Make all central payment</p>
           </div>
 
-           <p className="sidebar-desktop"
-              style={{
-                fontSize: 12,
-                fontWeight: 700,
-                color: C.muted,
-              }}
-            >
-              Rivers State University Teaching Hospital
-            </p>
+          <p className="sidebar-desktop"
+            style={{
+              fontSize: 12,
+              fontWeight: 700,
+              color: C.muted,
+            }}
+          >
+            Rivers State University Teaching Hospital
+          </p>
 
         </div>
+        {
+          !hideSearch &&
+          <div onClick={() => {
+            setSearch("")
+            setPatientIdInput("")
+            setReceipt({})
+            setHideSearch(true)
+          }} style={{ display: "flex", cursor: "pointer", alignItems: "center", gap: "5px" }}>
+            <Icon d={Icons.arrowLeft} /> Back
+          </div>
+        }
 
 
-
-        <div
-          style={{
-            background: C.white,
-            padding: "20px 20px",
-            marginBottom: "30px",
-            borderRadius: "6px",
-          }}
-        >
-          <h3 style={{ marginTop: 10, marginBottom: 10 }}>
-            Search Using Patient ID
-          </h3>
-          {/* ── Patient Search ───────────────────────────────────────── */}
-          <div style={{ marginBottom: 0 }}>
-            <div
-              style={{
-                display: "flex",
-                gap: 10,
-                marginBottom: 14,
-              }}
-            >
-              <div style={{ position: "relative", flex: 1 }}>
-                {/* <span
+        {
+          hideSearch &&
+          <div
+            style={{
+              background: C.white,
+              padding: "20px 20px",
+              marginBottom: "30px",
+              borderRadius: "6px",
+            }}
+          >
+            <h3 style={{ marginTop: 10, marginBottom: 10 }}>
+              Search Using Patient ID
+            </h3>
+            {/* ── Patient Search ───────────────────────────────────────── */}
+            <div style={{ marginBottom: 0 }}>
+              <div
+                style={{
+                  display: "flex",
+                  gap: 10,
+                  marginBottom: 14,
+                }}
+              >
+                <div style={{ position: "relative", flex: 1 }}>
+                  {/* <span
                   style={{
                     position: "absolute",
                     left: 11,
@@ -412,84 +544,62 @@ const [confirm, setConfirm] = useState({ open: false, id: null, number: null });
                 >
                   <Icon d={Icons.search} size={15} color={C.muted} />
                 </span> */}
-                <input
-                  value={patientIdInput}
-                  onChange={(e) => setPatientIdInput(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handlePatientSearch()}
-                  placeholder="Patient Code"
+                  <input
+                    value={patientIdInput}
+                    onChange={(e) => setPatientIdInput(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handlePatientSearch()}
+                    placeholder="Patient Code"
+                    style={{
+                      width: "100%",
+                      height: 40,
+                      padding: "16px ",
+                      border: `1.5px solid ${C.border}`,
+                      borderRadius: 6,
+                      fontSize: 14,
+                      color: C.text,
+                      background: C.white,
+                      outline: "none",
+                      fontFamily: "inherit",
+                    }}
+                    onFocus={(e) => (e.target.style.borderColor = C.primary)}
+                    onBlur={(e) => (e.target.style.borderColor = C.border)}
+                  />
+                </div>
+                <button
+                  onClick={handlePatientSearch}
+                  disabled={isLoading}
                   style={{
-                    width: "100%",
-                    height: 40,
-                    padding: "16px ",
-                    border: `1.5px solid ${C.border}`,
-                    borderRadius: 6,
+                    height: 34,
+                    padding: "0 40px",
+                    background: isLoading ? C.muted : C.primary,
+                    color: C.white,
+                    borderRadius: 0,
                     fontSize: 14,
-                    color: C.text,
-                    background: C.white,
-                    outline: "none",
+                    fontWeight: 400,
+                    border: "none",
                     fontFamily: "inherit",
+                    cursor: isLoading ? "not-allowed" : "pointer",
+                    whiteSpace: "nowrap",
                   }}
-                  onFocus={(e) => (e.target.style.borderColor = C.primary)}
-                  onBlur={(e) => (e.target.style.borderColor = C.border)}
-                />
+                  onMouseEnter={(e) => {
+                    if (!isLoading)
+                      e.currentTarget.style.background = C.primaryHover;
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isLoading)
+                      e.currentTarget.style.background = C.primary;
+                  }}
+                >
+                  {isLoading ? "Searching…" : "Search Patient"}
+                </button>
               </div>
-              <button
-                onClick={handlePatientSearch}
-                disabled={patientLoading}
-                style={{
-                  height: 34,
-                  padding: "0 40px",
-                  background: patientLoading ? C.muted : C.primary,
-                  color: C.white,
-                  borderRadius: 0,
-                  fontSize: 14,
-                  fontWeight: 400,
-                  border: "none",
-                  fontFamily: "inherit",
-                  cursor: patientLoading ? "not-allowed" : "pointer",
-                  whiteSpace: "nowrap",
-                }}
-                onMouseEnter={(e) => {
-                  if (!patientLoading)
-                    e.currentTarget.style.background = C.primaryHover;
-                }}
-                onMouseLeave={(e) => {
-                  if (!patientLoading)
-                    e.currentTarget.style.background = C.primary;
-                }}
-              >
-                {patientLoading ? "Searching…" : "Search Patient"}
-              </button>
             </div>
+            {/* ─────────────────────────────────────────────────────────── */}
           </div>
-          {/* ─────────────────────────────────────────────────────────── */}
-        </div>
+        }
 
-        {patient && (
-          <div style={{ ...styles.patientCard }}>
-            <div style={styles.avatar}>{patient.initials}</div>
-            <div
-              style={{ ...styles.patientInfo, justifyContent: "space-between" }}
-            >
-              <div style={{ ...styles.infoGroup, minWidth: 180 }}>
-                <span style={styles.infoLabel}>Full Name</span>
-                <span style={styles.infoValue}>{patient.name}</span>
-              </div>
-              <div style={styles.infoGroup}>
-                <span style={styles.infoLabel}>Patient ID</span>
-                <span style={styles.infoValue}>{patient.id}</span>
-              </div>
-              <div style={styles.infoGroup}>
-                <span style={styles.infoLabel}>Gender</span>
-                <span style={styles.infoValue}>{patient.gender}</span>
-              </div>
-              <div style={styles.infoGroup}>
-                <span style={styles.infoLabel}>Balance</span>
-                <span style={styles.balanceValue}>{patient.balance}</span>
-              </div>
-            </div>
-          </div>
-        )}
+
+
 
         {/* Toolbar */}
         <div
@@ -500,345 +610,400 @@ const [confirm, setConfirm] = useState({ open: false, id: null, number: null });
             overflow: "hidden",
           }}
         >
+          {patient && !hideSearch && (
+            <div style={{ ...styles.patientCard }}>
+              <div style={styles.avatar}>{patient.initials}</div>
+              <div
+                style={{ ...styles.patientInfo, justifyContent: "space-between" }}
+              >
+                <div style={{ ...styles.infoGroup, minWidth: 180 }}>
+                  <span style={styles.infoLabel}>Full Name</span>
+                  <span style={styles.infoValue}>{patient.name}</span>
+                </div>
+                <div style={styles.infoGroup}>
+                  <span style={styles.infoLabel}>Patient ID</span>
+                  <span style={styles.infoValue}>{patient.id}</span>
+                </div>
+                <div style={styles.infoGroup}>
+                  <span style={styles.infoLabel}>Gender</span>
+                  <span style={styles.infoValue}>{patient.gender}</span>
+                </div>
+                <div style={styles.infoGroup}>
+                  <span style={styles.infoLabel}>Balance</span>
+                  <span style={styles.balanceValue}>{patient.balance}</span>
+                </div>
+              </div>
+            </div>
+          )}
           <div
             style={{
               padding: "14px 20px",
-              borderBottom: `1px solid ${C.border}`,
               display: "flex",
               alignItems: "center",
               gap: 12,
               flexWrap: "wrap",
             }}
           >
-        
             <div style={{ flex: 1 }} />
 
-            {canManage && (
-              <button
-                onClick={() => {
-                  setSingleInvoice({});
-                  setShowInvoice(true)}}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 7,
-                  padding: "9px 18px",
-                  background: C.primary,
-                  color: C.white,
-                  borderRadius: 8,
-                  fontWeight: 700,
-                  fontSize: 13,
-                }}
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.background = C.primaryHover)
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.background = C.primary)
-                }
-              >
-                <Icon d={Icons.newReg} size={15} color={C.white} />
-              </button>
-            )}
-          </div>
-
-          {error && (
-            <div
-              style={{
-                margin: 20,
-                background: "#fff1f2",
-                border: `1px solid ${C.red}`,
-                borderRadius: 8,
-                padding: "10px 14px",
-                fontSize: 13,
-                color: C.red,
-                fontWeight: 500,
-              }}
-            >
-              {error.message ?? "Failed to load invoices."}
-            </div>
-          )}
-
-          {/* <div style={{ overflowX: "auto" }} className="">
-            <table
-              style={{
-                width: "100%",
-                borderCollapse: "collapse",
-                fontSize: 13,
-              }}
-            >
-
-           
-              <thead>
-                <tr style={{ background: C.lightBlue }}>
-                  {[
-                    "Patient Name",
-                    "Gender",
-                    "PCode",
-                    "Clinic",
-                    "Client TCode",
-                    "Date",
-                    "Actions",
-                  ].map((h, i) => (
-                    <th
-                      key={h}
-                    //   style={{
-                    //     padding: "12px 16px",
-                    //     textAlign: i === 5 ? "right" : "left",
-                    //     fontWeight: 700,
-                    //     whiteSpace: "nowrap",
-                    //     fontSize: 12,
-                    //     letterSpacing: "0.4px",
-                    //     textTransform:"uppercase"
-                    //   }}
-
-                    style={{ padding: "8px 16px", textAlign: "left", fontWeight: 600, color: C.white, whiteSpace: "nowrap", textTransform:"uppercase" }}
-                    >
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {isLoading ? (
-                  Array.from({ length: 5 }).map((_, i) => (
-                    <tr key={i} style={{ borderTop: `1px solid ${C.border}` }}>
-                      {[1, 2, 3, 4, 5, 6].map((c) => (
-                        <td key={c} style={{ padding: "13px 16px" }}>
-                          <Skeleton width={c === 1 ? 80 : c === 2 ? 120 : 80} />
-                        </td>
-                      ))}
-                    </tr>
-                  ))
-                ) : invoices.length === 0 ? (
-                  <tr>
-                    <td colSpan={7}>
-                      <div
-                        style={{ textAlign: "center", padding: "48px 24px" }}
-                      >
-                        <div
-                          style={{
-                            fontSize: 15,
-                            fontWeight: 700,
-                            color: C.text,
-                            marginBottom: 6,
-                          }}
-                        >
-                          {search || statusFilter
-                            ? "No invoices match your filter"
-                            : "No invoices yet"}
-                        </div>
-                        <div style={{ fontSize: 13, color: C.muted }}>
-                          {canManage
-                            ? 'Click "New Invoice" to create one.'
-                            : "No invoices to display."}
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                ) : (
-                  invoices.map((inv, i) => {
-                    const issueDate = formatRelativeDate(inv.issueDate);
-
-                    return (
-                      <tr key={inv.id}>
-                        <td
-                          style={{ padding: "13px 16px", whiteSpace: "nowrap" }}
-                        >
-                          {i + 1}
-                        </td>
-                        <td
-                          style={{ padding: "13px 16px", whiteSpace: "nowrap" }}
-                        >
-                          PAYMENT RECEIPT
-                        </td>
-                        <td
-                          style={{ padding: "13px 16px", whiteSpace: "nowrap" }}
-                        >
-                          {inv.invoiceNumber}
-                        </td>
-                        <td
-                          style={{ padding: "13px 16px", whiteSpace: "nowrap" }}
-                        >
-                          {fmtAmount(inv.grandTotal, "")}
-                        </td>
-                        <td
-                          style={{ padding: "13px 16px", whiteSpace: "nowrap" }}
-                        >
-                          {issueDate}
-                        </td>
-                        <td
-                          style={{ padding: "13px 16px", textAlign: "right" }}
-                        >
-                          <div
-                            style={{
-                              display: "flex",
-                              gap: 6,
-                              justifyContent: "end",
-                            }}
-                          >
-                            <button
-                              onClick={() => {
-                                setSingleInvoice(inv);
-                                setShowInvoiceDetails(true);
-                              }}
-                              title="View Receipt"
-                              style={{
-                                padding: "5px 10px",
-                                background: C.dark,
-                                color: C.white,
-                                borderRadius: 6,
-                                fontSize: 11,
-                                fontWeight: 600,
-                                whiteSpace: "nowrap",
-                              }}
-                            >
-                              View Receipt
-                            </button>
-                            {canManage && (
-                              <button
-                                onClick={() => {
-                                  setSingleInvoice(inv);
-                                  setShowInvoice(true);
-                                }}
-                                title="Edit invoice"
-                                style={{
-                                  padding: "5px 10px",
-                                  background: "#fff1f2",
-                                  color: C.accent,
-                                  borderRadius: 6,
-                                  fontSize: 11,
-                                  fontWeight: 600,
-                                  border: `1px solid #fecaca`,
-                                }}
-                              >
-                                <Icon d={Icons.edit} />
-                              </button>
-                            )}
-                            {canManage && (
-                              <button
-                              onClick={() => setConfirm({ open: true, id: inv.id, number: inv.invoiceNumber })}
-                                // onClick={() =>
-                                //   handleDelete(inv.id, inv.invoiceNumber)
-                                // }
-                                title="Delete invoice"
-                                disabled={deleteMutation.isPending}
-                                style={{
-                                  padding: "5px 10px",
-                                  background: "#fff1f2",
-                                  color: C.red,
-                                  borderRadius: 6,
-                                  fontSize: 11,
-                                  fontWeight: 600,
-                                  border: `1px solid #fecaca`,
-                                }}
-                              >
-                                <Icon d={Icons.delete} />
-                              </button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-
-             
-            </table>
-          </div> */}
-
-          <BillPostingForm/>
-
-          {!isLoading && totalPages > 1 && (
             <div
               style={{
                 display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                padding: "12px 20px",
-                borderTop: `1px solid ${C.border}`,
-                flexWrap: "wrap",
-                gap: 10,
+                gap: 4,
+                padding: 4,
               }}
             >
-              <span style={{ fontSize: 12, color: C.muted }}>
-                Page {page} of {totalPages}
-              </span>
-              <div style={{ display: "flex", gap: 6 }}>
+              {tabs.map((tab) => (
                 <button
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page === 1}
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
                   style={{
-                    padding: "7px 14px",
-                    borderRadius: 7,
+                    padding: "7px 16px",
                     fontSize: 13,
                     fontWeight: 600,
-                    background: page === 1 ? C.bg : C.white,
-                    color: page === 1 ? C.muted : C.text,
-                    border: `1.5px solid ${C.border}`,
-                    cursor: page === 1 ? "not-allowed" : "pointer",
-                    opacity: page === 1 ? 0.5 : 1,
-                  }}
-                >
-                  <Icon d={Icons.chevronLeft}/>
-                </button>
-                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                  const p = Math.max(1, Math.min(page - 2, totalPages - 4)) + i;
-                  return (
-                    <button
-                      key={p}
-                      onClick={() => setPage(p)}
-                      style={{
-                        width: 34,
-                        height: 34,
-                        borderRadius: 7,
-                        fontSize: 13,
-                        fontWeight: 600,
-                        background: p === page ? C.primary : C.white,
-                        color: p === page ? C.white : C.text,
-                        border: `1.5px solid ${p === page ? C.primary : C.border}`,
-                      }}
-                    >
-                      {p}
-                    </button>
-                  );
-                })}
-                <button
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={page === totalPages}
-                  style={{
-                    padding: "7px 14px",
-                    borderRadius: 7,
-                    fontSize: 13,
-                    fontWeight: 600,
-                    background: page === totalPages ? C.bg : C.white,
-                    color: page === totalPages ? C.muted : C.text,
-                    border: `1.5px solid ${C.border}`,
-                    cursor: page === totalPages ? "not-allowed" : "pointer",
-                    opacity: page === totalPages ? 0.5 : 1,
-                  }}
-                >
-                                   <Icon d={Icons.chevronRight}/>
+                    borderBottom: activeTab === tab.key ? `1px solid ${C.primary}` : "none",
+                    cursor: "pointer",
+                    color: activeTab === tab.key ? C.primary : C.muted,
+                    background: "transparent",
 
+                    transition: "all 0.15s",
+                  }}
+                >
+                  {tab.label}
                 </button>
-              </div>
+              ))}
             </div>
-          )}
+          </div>
+
+          {
+            activeTab === "list" ?
+              <div>
+                {error && (
+                  <div
+                    style={{
+                      margin: 20,
+                      background: "#fff1f2",
+                      border: `1px solid ${C.red}`,
+                      borderRadius: 8,
+                      padding: "10px 14px",
+                      fontSize: 13,
+                      color: C.red,
+                      fontWeight: 500,
+                    }}
+                  >
+                    {error.message ?? "Failed to load invoices."}
+                  </div>
+                )}
+
+                <div style={{ overflowX: "auto" }} className="">
+                  <table
+                    style={{
+                      width: "100%",
+                      borderCollapse: "collapse",
+                      fontSize: 13,
+                    }}
+                  >
+
+
+                    <thead>
+                      <tr style={{ background: C.lightBlue }}>
+                        {[
+                          "S/N",
+                          "Receipt Type",
+                          "Receipt ID",
+                          "Amount",
+                          "Date",
+                          "Actions",
+                        ].map((h, i) => (
+                          <th
+                            key={h}
+                            // style={{
+                            //   padding: "12px 16px",
+                            //   textAlign: i === 5 ? "right" : "left",
+                            //   fontWeight: 700,
+                            //   whiteSpace: "nowrap",
+                            //   fontSize: 12,
+                            //   letterSpacing: "0.4px",
+                            //   textTransform:"uppercase"
+                            // }}
+
+                            style={{
+                              padding: "8px 16px", fontWeight: 600, color: C.white, whiteSpace: "nowrap", textTransform: "uppercase",
+                              textAlign: i === 5 ? "right" : "left",
+
+                            }}
+                          >
+                            {h}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {isLoading ? (
+                        Array.from({ length: 5 }).map((_, i) => (
+                          <tr key={i} style={{ borderTop: `1px solid ${C.border}` }}>
+                            {[1, 2, 3, 4, 5, 6].map((c) => (
+                              <td key={c} style={{ padding: "13px 16px" }}>
+                                <Skeleton width={c === 1 ? 80 : c === 2 ? 120 : 80} />
+                              </td>
+                            ))}
+                          </tr>
+                        ))
+                      ) : invoices.length === 0 ? (
+                        <tr>
+                          <td colSpan={7}>
+                            <div
+                              style={{ textAlign: "center", padding: "48px 24px" }}
+                            >
+                              <div
+                                style={{
+                                  fontSize: 15,
+                                  fontWeight: 700,
+                                  color: C.text,
+                                  marginBottom: 6,
+                                }}
+                              >
+                                {search || statusFilter
+                                  ? "No invoices match your filter"
+                                  : "No invoices yet"}
+                              </div>
+                              <div style={{ fontSize: 13, color: C.muted }}>
+                                {canManage
+                                  ? 'Click "New Invoice" to create one.'
+                                  : "No invoices to display."}
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      ) : (
+                        invoices.map((inv, i) => {
+                          const issueDate = formatRelativeDate(inv.issueDate);
+
+                          return (
+                            <tr key={inv.id}>
+                              <td
+                                style={{ padding: "13px 16px", whiteSpace: "nowrap" }}
+                              >
+                                {i + 1}
+                              </td>
+                              <td
+                                style={{ padding: "13px 16px", whiteSpace: "nowrap" }}
+                              >
+                                PAYMENT RECEIPT
+                              </td>
+                              <td
+                                style={{ padding: "13px 16px", whiteSpace: "nowrap" }}
+                              >
+                                {inv.invoiceNumber}
+                              </td>
+                              <td
+                                style={{ padding: "13px 16px", whiteSpace: "nowrap" }}
+                              >
+                                {fmtAmount(inv.grandTotal, "")}
+                              </td>
+                              <td
+                                style={{ padding: "13px 16px", whiteSpace: "nowrap" }}
+                              >
+                                {issueDate}
+                              </td>
+                              <td
+                                style={{ padding: "13px 16px", textAlign: "right" }}
+                              >
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    gap: 6,
+                                    justifyContent: "end",
+                                  }}
+                                >
+                                  <button
+                                    onClick={() => {
+                                      setSingleInvoice(inv);
+
+                                      setShowInvoiceDetails(true);
+                                    }}
+                                    title="View Receipt"
+                                    style={{
+                                      padding: "5px 10px",
+                                      background: C.dark,
+                                      color: C.white,
+                                      borderRadius: 6,
+                                      fontSize: 11,
+                                      fontWeight: 600,
+                                      whiteSpace: "nowrap",
+                                    }}
+                                  >
+                                    View Receipt
+                                  </button>
+                                  {canManage && (
+                                    <button
+                                      onClick={() => {
+
+                                        let lineItems = inv?.lineItems ?? []
+                                        lineItems = lineItems.map((item) => ({
+                                          unit: { label: item?.unit } || "...", billName: { label: item?.description }, amount: item?.total
+                                        }))
+                                        setPatientIdInput(inv.clientId)
+                                        handlePatientSearch()
+
+
+                                        setBills(lineItems)
+                                        setActiveTab("post")
+                                        setReceipt(inv);
+                                      }}
+                                      title="Edit invoice"
+                                      style={{
+                                        padding: "5px 10px",
+                                        background: "#fff1f2",
+                                        color: C.accent,
+                                        borderRadius: 6,
+                                        fontSize: 11,
+                                        fontWeight: 600,
+                                        border: `1px solid #fecaca`,
+                                      }}
+                                    >
+                                      <Icon d={Icons.edit} />
+                                    </button>
+                                  )}
+                                  {canManage && (
+                                    <button
+                                      onClick={() => setConfirm({ open: true, id: inv.id, number: inv.invoiceNumber })}
+                                      // onClick={() =>
+                                      //   handleDelete(inv.id, inv.invoiceNumber)
+                                      // }
+                                      title="Delete invoice"
+                                      disabled={deleteMutation.isPending}
+                                      style={{
+                                        padding: "5px 10px",
+                                        background: "#fff1f2",
+                                        color: C.red,
+                                        borderRadius: 6,
+                                        fontSize: 11,
+                                        fontWeight: 600,
+                                        border: `1px solid #fecaca`,
+                                      }}
+                                    >
+                                      <Icon d={Icons.delete} />
+                                    </button>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+
+
+                  </table>
+                </div>
+
+                {!isLoading && totalPages > 1 && (
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "12px 20px",
+                      borderTop: `1px solid ${C.border}`,
+                      flexWrap: "wrap",
+                      gap: 10,
+                    }}
+                  >
+                    <span style={{ fontSize: 12, color: C.muted }}>
+                      Page {page} of {totalPages}
+                    </span>
+                    <div style={{ display: "flex", gap: 6 }}>
+                      <button
+                        onClick={() => setPage((p) => Math.max(1, p - 1))}
+                        disabled={page === 1}
+                        style={{
+                          padding: "7px 14px",
+                          borderRadius: 7,
+                          fontSize: 13,
+                          fontWeight: 600,
+                          background: page === 1 ? C.bg : C.white,
+                          color: page === 1 ? C.muted : C.text,
+                          border: `1.5px solid ${C.border}`,
+                          cursor: page === 1 ? "not-allowed" : "pointer",
+                          opacity: page === 1 ? 0.5 : 1,
+                        }}
+                      >
+                        <Icon d={Icons.chevronLeft} />
+                      </button>
+                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                        const p = Math.max(1, Math.min(page - 2, totalPages - 4)) + i;
+                        return (
+                          <button
+                            key={p}
+                            onClick={() => setPage(p)}
+                            style={{
+                              width: 34,
+                              height: 34,
+                              borderRadius: 7,
+                              fontSize: 13,
+                              fontWeight: 600,
+                              background: p === page ? C.primary : C.white,
+                              color: p === page ? C.white : C.text,
+                              border: `1.5px solid ${p === page ? C.primary : C.border}`,
+                            }}
+                          >
+                            {p}
+                          </button>
+                        );
+                      })}
+                      <button
+                        onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                        disabled={page === totalPages}
+                        style={{
+                          padding: "7px 14px",
+                          borderRadius: 7,
+                          fontSize: 13,
+                          fontWeight: 600,
+                          background: page === totalPages ? C.bg : C.white,
+                          color: page === totalPages ? C.muted : C.text,
+                          border: `1.5px solid ${C.border}`,
+                          cursor: page === totalPages ? "not-allowed" : "pointer",
+                          opacity: page === totalPages ? 0.5 : 1,
+                        }}
+                      >
+                        <Icon d={Icons.chevronRight} />
+
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+              </div> :
+
+              <BillPostingForm draft={draft} bills={bills} setBills={setBills} setDraft={setDraft} setDiscountCode={setDiscountCode} discountCode={discountCode} handleSubmit={handleSubmit} />
+          }
+
+
+
+
         </div>
       </div>
 
       <ConfirmDialog
-  isOpen={confirm.open}
-  title="Delete Invoice"
-  message={`Are you sure you want to delete invoice ${confirm.number}? This cannot be undone.`}
-  confirmLabel="Delete"
-  danger
-  onCancel={() => setConfirm({ open: false, id: null, number: null })}
-  onConfirm={() => {
-    deleteMutation.mutate(confirm.id);
-    setConfirm({ open: false, id: null, number: null });
-  }}
-/>
+        isOpen={confirm.open}
+        title="Delete Invoice"
+        message={`Are you sure you want to delete invoice ${confirm.number}? This cannot be undone.`}
+        confirmLabel="Delete"
+        danger
+        onCancel={() => setConfirm({ open: false, id: null, number: null })}
+        onConfirm={() => {
+          deleteMutation.mutate(confirm.id);
+          setConfirm({ open: false, id: null, number: null });
+        }}
+      />
+
+      {
+        addPatient && <PatientModal receipt={receipt} onClose={() => setAddPatient(false)} onSuccess={handleFinalSubmit}
+          loadingCreate={loadingCreate}
+          loadingUpdate={loadingUpdate}
+        />
+      }
     </>
   );
 }

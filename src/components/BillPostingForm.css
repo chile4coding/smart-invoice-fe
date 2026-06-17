@@ -8,7 +8,8 @@
 
 /* ── Input row ── */
 .bpf-input-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
   gap: 16px;
   align-items: flex-end;
   margin-bottom: 16px;
@@ -86,6 +87,7 @@
   border-collapse: collapse;
   background: #fff;
   table-layout: fixed;
+  min-width: 400px;
 }
 
 .bpf-th {
@@ -407,4 +409,11 @@
 
 @keyframes spin {
   to { transform: rotate(360deg); }
+}
+
+@media (max-width: 768px) {
+  .bpf-input-row{
+  grid-template-columns: 1fr;
+  }
+
 }
