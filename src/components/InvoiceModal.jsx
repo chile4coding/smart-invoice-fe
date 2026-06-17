@@ -146,9 +146,9 @@ const TimeInput24h = ({ value, onChange }) => {
 
 export default function InvoiceModal({ onClose, onSuccess, receipt }) {
   const createInvoice = useCreateInvoice();
+  const updateInvoice = useUpdateInvoice();
   const loading = createInvoice.isPending;
   const [error, setError] = useState("");
-  const updateInvoice = useUpdateInvoice();
 
   // Client Info
   const [clientName, setClientName] = useState("");
